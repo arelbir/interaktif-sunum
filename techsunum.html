@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GLM-4.5: Yapay Zeka Devrimi | Z.ai</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- GSAP CDN (Animasyonlar için) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <!-- Google Fonts - Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* Genel Stil Ayarları */
+        body, html {
+            font-family: 'Inter', sans-serif; /* Inter yazı tipi */
+            background-color: #f8f8f8; /* Açık arka plan */
+            color: #333333; /* Koyu metin rengi */
+            overflow: hidden; /* Kaydırmayı engelle */
+            height: 100%;
+            width: 100%;
+            line-height: 1.6; /* Okunabilirliği artırmak için hafifçe artırılmış satır yüksekliği */
+        }
+        /* Sunum Kapsayıcısı */
+        #presentation-container {
+            height: 100%;
+            width: 100%;
+            display: flex;
+            transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1); /* Slayt geçiş animasyonu */
+        }
+        /* Slayt Stili */
+        .slide {
+            width: 100vw; /* Görünüm genişliğinin tamamını kapla */
+            height: 100vh; /* Görünüm yüksekliğinin tamamını kapla */
+            flex-shrink: 0; /* Esnek kutu içinde küçülmesini engelle */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem 4rem;
+            position: relative;
+            z-index: 1;
+            visibility: hidden; /* GSAP kontrolü için başlangıçta gizli */
+        }
+        .slide.active {
+           visibility: visible; /* Aktif slaytı görünür yap */
+        }
+        .animated-item {
+           opacity: 0; /* Animasyonlu öğeler için başlangıç opaklığı */
+        }
+        /* Modern Kart Stili */
+        .modern-card {
+            background: #ffffff; /* Beyaz arka plan */
+            border: 1px solid #e0e0e0; /* Açık kenarlık */
+            border-radius: 1rem; /* Daha yuvarlak köşeler */
+            height: 100%;
+            transition: transform 0.3s ease, box-shadow 0.3s ease; /* Hover animasyonları */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); /* Yumuşak başlangıç gölgesi */
+        }
+        .modern-card:hover {
+            transform: translateY(-7px); /* Daha belirgin yukarı hareket */
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.15); /* Daha belirgin gölge efekti */
+        }
+        /* Vurgu Metni Stili (Logodaki Mavi) */
+        .accent-text {
+            color: #007BFF; /* Logodaki mavi tonu */
+        }
+        /* İkincil Vurgu Metni Stili (Logodaki Yeşil) */
+        .secondary-accent-text {
+            color: #8BC34A; /* Logodaki yeşil tonu */
+        }
+        /* Navigasyon Okları Stili */
+        .nav-arrow {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.08); /* Hafif şeffaf koyu arka plan */
+            border-radius: 50%;
+            width: 50px; /* Daha büyük oklar */
+            height: 50px; /* Daha büyük oklar */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #333333; /* Koyu ok rengi */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Hafif gölge */
+        }
+        .nav-arrow:hover {
+            background: rgba(0, 0, 0, 0.15);
+            transform: translateY(-50%) scale(1.15); /* Hover'da daha belirgin ölçek */
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        #prev-slide { left: 2.5rem; } /* Konumu hafifçe ayarla */
+        #next-slide { right: 2.5rem; } /* Konumu hafifçe ayarla */
+        /* İlerleme Çubuğu Kapsayıcısı */
+        #progress-bar-container {
+            position: fixed;
+            bottom: 2.5rem; /* Konumu hafifçe ayarla */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 350px; /* Daha geniş ilerleme çubuğu */
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        #progress-bar {
+            width: 100%;
+            height: 6px; /* Daha kalın ilerleme çubuğu */
+            background-color: #e0e0e0;
+            border-radius: 3px;
+        }
+        #progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(to right, #007BFF, #8BC34A); /* Mavi-yeşil gradyan */
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.5s ease-out; /* Daha yumuşak geçiş */
+        }
+        /* Yol Haritası Bağlayıcıları */
+        .roadmap-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem; /* Daha geniş boşluk */
+        }
+        .roadmap-connector {
+            height: 3px; /* Daha kalın bağlayıcı */
+            width: 0; /* GSAP kontrol edecek */
+            background: linear-gradient(to right, #007BFF, #8BC34A); /* Logodaki mavi ve yeşil gradyanı */
+        }
+
+        /* Başlık Logosu Stilleri */
+        #header-logo {
+            position: fixed; /* Ekranın belirli bir noktasında sabit kalmasını sağlar */
+            top: 2rem; /* Yukarıdan 2rem boşluk */
+            left: 2rem; /* Soldan 2rem boşluk */
+            z-index: 100; /* Diğer tüm öğelerin üzerinde olması için */
+        }
+        #header-logo img {
+            height: 45px; /* Logo yüksekliği */
+            width: auto; /* Orantılı genişlik */
+            opacity: 0.95; /* Hafif şeffaflık */
+            transition: opacity 0.3s ease; /* Hover efekti için yumuşak geçiş */
+        }
+        #header-logo img:hover {
+            opacity: 1; /* Üzerine gelindiğinde tamamen görünür olur */
+        }
+
+        /* SVG Grafik Konteyneri */
+        .svg-container {
+            width: 100%;
+            height: 70vh; /* Yüksekliği ayarla */
+            overflow-x: auto; /* Yatay kaydırma */
+            overflow-y: hidden; /* Dikey kaydırmayı engelle */
+            border: 1px solid #e0e0e0;
+            border-radius: 1rem;
+            background-color: #ffffff;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            padding: 1rem;
+            display: flex; /* İçeriği ortalamak için */
+            align-items: center; /* Dikeyde ortala */
+            justify-content: center; /* Yatayda ortala */
+        }
+        .svg-container svg {
+            min-width: 1200px; /* SVG'nin minimum genişliği, kaydırma için */
+            height: 100%;
+        }
+
+        /* Küçük ekranlar için responsive tasarım */
+        @media (max-width: 768px) {
+            #header-logo {
+                top: 1rem;
+                left: 1rem;
+            }
+            #header-logo img {
+                height: 35px;
+            }
+            .slide {
+                padding: 1rem 1.5rem; /* Küçük ekranlar için padding ayarı */
+            }
+            .nav-arrow {
+                width: 40px;
+                height: 40px;
+            }
+            #progress-bar-container {
+                width: 250px;
+                bottom: 1.5rem;
+            }
+            .svg-container {
+                height: 50vh; /* Küçük ekranlarda daha az yer kaplasın */
+            }
+            .svg-container svg {
+                min-width: 900px; /* Küçük ekranlarda da kaydırılabilir olsun */
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Başlık Logosu -->
+    <div id="header-logo">
+        <img src="https://aym.aksa.com.tr/Content/Files/Settings/1/LogoLight/Aksa%20Genel.jpg" alt="Aksa Logo" onerror="this.onerror=null;this.src='https://placehold.co/150x40/f8f8f8/333333?text=Your+Logo';">
+    </div>
+
+    <!-- Sunum Slaytları Kapsayıcısı -->
+    <div id="presentation-container">
+        <!-- SLAYT 1: BAŞLIK -->
+        <section class="slide">
+            <div class="text-center max-w-4xl mx-auto">
+                <h1 class="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-2 animated-item">
+                    Partnerini anlamak
+                </h1>
+                <h1 class="text-2xl md:text-3xl lg:text-4xl font-extrabold tracking-tight animated-item">
+                    
+                </h1>   
+                <p class="text-xl md:text-2xl font-semibold accent-text animated-item">GLM-4.5</p>
+            </div>
+        </section>
+
+        <!-- SLAYT 2: GLM-4.5 SERİSİNE GENEL BAKIŞ -->
+        <section class="slide">
+            <div class="container mx-auto px-4 text-center max-w-5xl">
+                <h2 class="text-3xl md:text-5xl font-extrabold mb-12 animated-item">GLM-4.5 Serisine Genel Bakış</h2>
+                
+                <div class="space-y-8">
+                    <div class="modern-card p-8 animated-item">
+                        <h3 class="font-bold text-2xl mb-4 accent-text">Model Üyeleri ve Parametreler</h3>
+                        <ul class="list-disc list-inside text-neutral-700 text-xl font-light text-left mx-auto max-w-lg">
+                            <li><strong>GLM-4.5:</strong> Toplam 355 milyar parametre, 32 milyar aktif parametre.</li>
+                            <li><strong>GLM-4.5-Air:</strong> Toplam 106 milyar parametre, 12 milyar aktif parametre.</li>
+                        </ul>
+                    </div>
+
+                    <div class="modern-card p-8 animated-item">
+                           <h3 class="font-bold text-2xl mb-4 accent-text">Performans ve Sıralama</h3>
+                           <ul class="list-disc list-inside text-neutral-700 text-xl font-light text-left mx-auto max-w-lg">
+                               <li>12 endüstri standardı benchmark testinde <strong>üçüncü sıra</strong> (tescilli ve açık kaynaklı modeller arasında).</li>
+                               <li>GLM-4.5-Air <strong>altıncı sırada</strong> yer aldı.</li>
+                           </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLAYT 3: GLM-4.5: TEMEL YETENEKLER -->
+        <section class="slide">
+            <div class="container mx-auto px-4 text-center max-w-5xl">
+                <h2 class="text-3xl md:text-5xl font-extrabold mb-12 animated-item">GLM-4.5: Temel Yetenekler</h2>
+                <div class="grid md:grid-cols-3 gap-8 text-left">
+                    <div class="modern-card p-6 animated-item">
+                        <h3 class="font-bold text-xl mb-3 accent-text">Akıl Yürütme (Reasoning)</h3>
+                        <p class="text-neutral-700 text-sm font-normal">Karmaşık problemleri anlama ve çözme becerisi.</p>
+                    </div>
+                    <div class="modern-card p-6 animated-item">
+                        <h3 class="font-bold text-xl mb-3 secondary-accent-text">Kodlama (Coding)</h3>
+                        <p class="text-neutral-700 text-sm font-normal">Kod üretme, anlama ve hataları giderme yeteneği.</p>
+                    </div>
+                    <div class="modern-card p-6 animated-item">
+                        <h3 class="font-bold text-xl mb-3 accent-text">Otonom Ajan (Agentic)</h3>
+                        <p class="text-neutral-700 text-sm font-normal">Araçları kullanarak görevleri bağımsız tamamlama.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLAYT 4: TEKNİK MİMARİYE GİRİŞ: MOE -->
+        <section class="slide">
+            <div class="container mx-auto px-4 text-center max-w-5xl">
+                <h2 class="text-3xl md:text-5xl font-extrabold mb-12 animated-item">Teknik Mimariye Giriş: MoE</h2>
+                <div class="modern-card p-8 animated-item">
+                    <h3 class="font-bold text-2xl mb-4 accent-text">Mixture of Experts (Uzman Karışımı) Nedir?</h3>
+                    <p class="text-neutral-700 text-xl font-light">
+                        Diyelim ki elinizde matematik, tarih ve edebiyat konularında uzmanlaşmış farklı öğretmenler var. Bir soru geldiğinde, Gating mekanizması (bir tür kapı veya yönlendirici) bu sorunun hangi öğretmene yönlendirilmesi gerektiğine karar verir.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLAYT 5: GLM-4.5'İN MOE YAKLAŞIMI -->
+        <section class="slide">
+            <div class="container mx-auto px-4 text-center max-w-5xl">
+                <h2 class="text-3xl md:text-5xl font-extrabold mb-12 animated-item">GLM-4.5'in MoE Yaklaşımı</h2>
+                <div class="modern-card p-8 animated-item">
+                    <h3 class="font-bold text-2xl mb-4 secondary-accent-text">Benzersiz Tasarım Tercihleri</h3>
+                    <ul class="list-disc list-inside text-neutral-700 text-xl font-light text-left mx-auto max-w-lg">
+                        <li>Geleneksel MoE'den farklı: Daha az genişlik (daha az uzman) ve daha fazla katman (daha derin bir ağ).</li>
+                        <li>Akıl yürütme yeteneklerini inanılmaz derecede artırır.</li>
+                        <li>Uzun bağlamlı, çok turlu araç çağrılarında çok daha yüksek bir istikrar sağlar.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLAYT 6: GLM-4.5 MOE MİMARİSİ (GÖRSEL) -->
+        <section class="slide">
+            <div class="container mx-auto px-4 text-center max-w-full h-full flex flex-col justify-center items-center">
+                <h2 class="text-3xl md:text-5xl font-extrabold mb-8 animated-item">GLM-4.5 MoE Mimarisi</h2>
+                <div class="svg-container animated-item">
+                    <svg viewBox="0 0 1600 600" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Styles for SVG elements -->
+                        <style>
+                            .node-rect {
+                                fill: #ffffff;
+                                stroke: #e0e0e0;
+                                stroke-width: 2;
+                                rx: 10;
+                                ry: 10;
+                                filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.08));
+                            }
+                            .node-text {
+                                font-family: 'Inter', sans-serif;
+                                font-size: 24px;
+                                fill: #333333;
+                                text-anchor: middle;
+                                dominant-baseline: middle;
+                            }
+                            .sub-node-rect {
+                                fill: #f0f0f0;
+                                stroke: #d0d0d0;
+                                stroke-width: 1;
+                                rx: 5;
+                                ry: 5;
+                                filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.05));
+                            }
+                            .sub-node-text {
+                                font-family: 'Inter', sans-serif;
+                                font-size: 16px;
+                                fill: #555555;
+                                text-anchor: middle;
+                                dominant-baseline: middle;
+                            }
+                            .arrow {
+                                stroke: #007BFF;
+                                stroke-width: 3;
+                                fill: none;
+                                marker-end: url(#arrowhead);
+                            }
+                            .arrow-green {
+                                stroke: #8BC34A;
+                                stroke-width: 3;
+                                fill: none;
+                                marker-end: url(#arrowhead-green);
+                            }
+                            .dashed-arrow {
+                                stroke: #666666;
+                                stroke-width: 2;
+                                stroke-dasharray: 5 5;
+                                fill: none;
+                                marker-end: url(#arrowhead-gray);
+                            }
+                            .explanation-text {
+                                font-family: 'Inter', sans-serif;
+                                font-size: 14px;
+                                fill: #666666;
+                            }
+                        </style>
+
+                        <!-- Arrowhead Definitions -->
+                        <defs>
+                            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                                <polygon points="0 0, 10 3.5, 0 7" fill="#007BFF" />
+                            </marker>
+                            <marker id="arrowhead-green" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                                <polygon points="0 0, 10 3.5, 0 7" fill="#8BC34A" />
+                            </marker>
+                            <marker id="arrowhead-gray" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                                <polygon points="0 0, 10 3.5, 0 7" fill="#666666" />
+                            </marker>
+                        </defs>
+
+                        <!-- Nodes -->
+                        <!-- Input -->
+                        <rect x="50" y="275" width="150" height="50" class="node-rect" />
+                        <text x="125" y="300" class="node-text">Girdi (Input)</text>
+
+                        <!-- Gating Mechanism -->
+                        <rect x="250" y="250" width="200" height="100" class="node-rect" />
+                        <text x="350" y="280" class="node-text">Gating Mekanizması</text>
+                        <text x="350" y="310" class="sub-node-text">(Sigmoid Gating)</text>
+
+                        <!-- Sub-components of Gating/Attention -->
+                        <rect x="270" y="150" width="160" height="40" class="sub-node-rect" />
+                        <text x="350" y="170" class="sub-node-text">K-Gruplu Sorgu Dikkat</text>
+                        <rect x="270" y="380" width="160" height="40" class="sub-node-rect" />
+                        <text x="350" y="400" class="sub-node-text">96 Dikkat Başlığı</text>
+                        <rect x="270" y="450" width="160" height="40" class="sub-node-rect" />
+                        <text x="350" y="470" class="sub-node-text">QK Norm</text>
+
+
+                        <!-- Experts -->
+                        <rect x="550" y="100" width="180" height="80" class="node-rect" />
+                        <text x="640" y="140" class="node-text">Uzman 1</text>
+                        <rect x="550" y="250" width="180" height="80" class="node-rect" />
+                        <text x="640" y="290" class="node-text">Uzman 2</text>
+                        <rect x="550" y="400" width="180" height="80" class="node-rect" />
+                        <text x="640" y="440" class="node-text">Uzman N</text>
+
+                        <!-- Kayıpsız Yönlendirme (conceptual node) -->
+                        <rect x="780" y="275" width="180" height="50" class="node-rect" />
+                        <text x="870" y="300" class="node-text">Kayıpsız Yönlendirme</text>
+
+                        <!-- Output -->
+                        <rect x="1050" y="275" width="150" height="50" class="node-rect" />
+                        <text x="1125" y="300" class="node-text">Çıktı (Output)</text>
+
+                        <!-- MTP -->
+                        <rect x="1250" y="150" width="180" height="50" class="node-rect" />
+                        <text x="1340" y="175" class="node-text">MTP</text>
+                        <text x="1340" y="195" class="sub-node-text">(Çoklu Token Tahmini)</text>
+
+                        <!-- Muon Optimizer -->
+                        <rect x="1250" y="350" width="180" height="50" class="node-rect" />
+                        <text x="1340" y="375" class="node-text">Muon Optimizer</text>
+
+
+                        <!-- Arrows -->
+                        <line x1="200" y1="300" x2="250" y2="300" class="arrow" /> <!-- Input to Gating -->
+
+                        <line x1="450" y1="300" x2="550" y2="140" class="arrow" /> <!-- Gating to Expert 1 -->
+                        <line x1="450" y1="300" x2="550" y2="290" class="arrow" /> <!-- Gating to Expert 2 -->
+                        <line x1="450" y1="300" x2="550" y2="440" class="arrow" /> <!-- Gating to Expert N -->
+                        
+                        <!-- Dashed lines from Gating sub-components to Gating -->
+                        <line x1="350" y1="190" x2="350" y2="250" class="dashed-arrow" />
+                        <line x1="350" y1="420" x2="350" y2="350" class="dashed-arrow" />
+                        <line x1="350" y1="490" x2="350" y2="350" class="dashed-arrow" />
+
+                        <!-- Experts to Kayıpsız Yönlendirme -->
+                        <line x1="730" y1="140" x2="780" y2="300" class="arrow-green" />
+                        <line x1="730" y1="290" x2="780" y2="300" class="arrow-green" />
+                        <line x1="730" y1="440" x2="780" y2="300" class="arrow-green" />
+
+                        <!-- Kayıpsız Yönlendirme to Output -->
+                        <line x1="960" y1="300" x2="1050" y2="300" class="arrow" />
+
+                        <!-- Output to MTP (conceptual influence) -->
+                        <line x1="1125" y1="275" x2="1340" y2="150" class="dashed-arrow" />
+
+                        <!-- Training process influence (conceptual) -->
+                        <line x1="1340" y1="350" x2="1125" y2="325" class="dashed-arrow" />
+                        <text x="1340" y="420" class="explanation-text" text-anchor="middle">Eğitim Sürecini Etkiler</text>
+
+                        <!-- Explanations -->
+                        <text x="350" y="100" class="explanation-text" text-anchor="middle">Girdi analizine göre uzmana yönlendirme</text>
+                        <text x="640" y="70" class="explanation-text" text-anchor="middle">Farklı görevler için özelleşmiş ağlar</text>
+                        <text x="870" y="250" class="explanation-text" text-anchor="middle">Bilgi akışını optimize eder</text>
+                        <text x="1125" y="250" class="explanation-text" text-anchor="middle">Nihai sonuç</text>
+                    </svg>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLAYT 7: İLERİ TEKNİKLER: MTP VE MUON OPTİMİZER -->
+        <section class="slide">
+            <div class="container mx-auto px-4 text-center max-w-5xl">
+                <h2 class="text-3xl md:text-5xl font-extrabold mb-12 animated-item">İleri Teknikler</h2>
+                <div class="space-y-8">
+                    <div class="modern-card p-8 animated-item">
+                        <h3 class="font-bold text-2xl mb-4 accent-text">MTP (Multi-Token Prediction)</h3>
+                        <p class="text-neutral-700 text-xl font-light">
+                            Modelin aynı anda birden fazla kelimeyi tahmin etmesini sağlar. Daha tutarlı ve akıcı metinler üretir, çıkarım hızını önemli ölçüde artırır.
+                        </p>
+                    </div>
+                    <div class="modern-card p-8 animated-item">
+                        <h3 class="font-bold text-2xl mb-4 secondary-accent-text">Muon Optimizer</h3>
+                        <p class="text-neutral-700 text-xl font-light">
+                            Hızlı eğitim ve büyük toplu iş boyutlarını etkin yöneten özel bir optimizasyon algoritmasıdır. Devasa modellerin verimli eğitimini sağlar.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLAYT 8: EĞİTİM SÜRECİ: ÖN EĞİTİM -->
+        <section class="slide">
+            <div class="container mx-auto px-4 text-center max-w-5xl">
+                <h2 class="text-3xl md:text-5xl font-extrabold mb-12 animated-item">Eğitim Süreci: Ön Eğitim</h2>
+                <div class="modern-card p-8 animated-item">
+                    <h3 class="font-bold text-2xl mb-4 accent-text">Kapsamlı Veri Kümesi</h3>
+                    <ul class="list-disc list-inside text-neutral-700 text-xl font-light text-left mx-auto max-w-lg">
+                        <li>Toplam 22 trilyon tokenlık devasa bir veri kümesi üzerinde ön eğitime tabi tutulmuştur.</li>
+                        <li><strong>15 trilyonluk genel veri:</strong> Geniş bir yelpazede metin ve kod verilerini içerir.</li>
+                        <li><strong>7 trilyonluk kod ve akıl yürütme verisi:</strong> Özellikle kodlama ve karmaşık akıl yürütme görevlerine odaklanır.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLAYT 9: EĞİTİM SÜRECİ: SONRAKİ EĞİTİM VE RL 'SLIME' (BÖLÜM 1) -->
+        <section class="slide">
+            <div class="container mx-auto px-4 text-center max-w-6xl">
+                <h2 class="text-3xl md:text-5xl font-extrabold mb-12 animated-item">Eğitim Süreci: RL 'slime'</h2>
+                <div class="grid md:grid-cols-2 gap-8 text-left">
+                    <div class="modern-card p-6 animated-item">
+                        <h4 class="font-bold text-xl mb-2 accent-text">Sonraki Eğitim (Post-training)</h4>
+                        <ul class="list-disc list-inside text-neutral-600 text-sm font-normal">
+                            <li>Ön eğitimden sonra modeller, alan özel talimat verileriyle daha da rafine edilmiştir.</li>
+                            <li>Modelin belirli görevlere daha iyi uyum sağlamasına yardımcı olur.</li>
+                        </ul>
+                    </div>
+                    <div class="modern-card p-6 animated-item">
+                        <h4 class="font-bold text-xl mb-2 secondary-accent-text">Esnek Hibrit Eğitim Mimarisi</h4>
+                        <ul class="list-disc list-inside text-neutral-600 text-sm font-normal">
+                            <li>Hem senkron hem de asenkron eğitim yaklaşımlarını birleştirir.</li>
+                            <li>Veri üretiminin yavaş olabileceği karmaşık ajan görevleri için kritiktir.</li>
+                        </ul>
+                    </div>
+                    <div class="modern-card p-6 animated-item col-span-full">
+                        <h4 class="font-bold text-xl mb-2 accent-text">Ayrıştırılmış Ajan Odaklı Tasarım</h4>
+                        <ul class="list-disc list-inside text-neutral-600 text-sm font-normal">
+                            <li>Deneyim toplama sürecini (rollout) ana eğitim döngüsünden bağımsız yürütür.</li>
+                            <li>Dar boğazları ortadan kaldırır ve ölçeklenebilirliği artırır.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLAYT 10: EĞİTİM SÜRECİ: RL 'SLIME' (BÖLÜM 2) -->
+        <section class="slide">
+            <div class="container mx-auto px-4 text-center max-w-5xl">
+                <h2 class="text-3xl md:text-5xl font-extrabold mb-12 animated-item">RL 'slime' (Devam)</h2>
+                <div class="space-y-8">
+                    <div class="modern-card p-8 animated-item">
+                        <h3 class="font-bold text-2xl mb-4 accent-text">Karışık Hassasiyetli Rollout'lar</h3>
+                        <p class="text-neutral-700 text-xl font-light">
+                            Veri üretimi için daha düşük hassasiyetli (FP8) sayı formatları kullanılırken, model eğitimi için daha yüksek hassasiyet (BF16) korunur. Eğitim kalitesinden ödün vermeden veri üretim hızını artırır.
+                        </p>
+                    </div>
+                    <div class="modern-card p-8 animated-item">
+                        <h3 class="font-bold text-2xl mb-4 secondary-accent-text">Ajansal Akışlar Üzerinde Eğitim</h3>
+                        <p class="text-neutral-700 text-xl font-light">
+                            Sadece soyut bilgi soruları değil, bilgi arayan soru cevap görevleri ve gerçek yazılım mühendisliği görevleri üzerinde de gerçekleştirilmiştir.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLAYT 11: GLM-4.5'İN UYGULAMA ALANLARI -->
+        <section class="slide">
+            <div class="container mx-auto px-4 text-center max-w-6xl">
+                   <h2 class="text-3xl md:text-5xl font-extrabold mb-12 animated-item">GLM-4.5: Uygulama Alanları</h2>
+                   <div class="grid md:grid-cols-2 gap-8 text-left">
+                       <div class="modern-card p-6 animated-item">
+                            <h4 class="font-bold text-xl mb-2 accent-text">Ajan Yetenekleri</h4>
+                            <ul class="list-disc list-inside text-neutral-600 text-sm font-normal">
+                                <li>Web tarama gibi karmaşık akıl yürütme.</li>
+                                <li>Çok turlu araç kullanımını gerektiren ajan uygulamalarında başarılı.</li>
+                            </ul>
+                           </div>
+                           <div class="modern-card p-6 animated-item">
+                                <h4 class="font-bold text-xl mb-2 secondary-accent-text">Kodlama Yetenekleri</h4>
+                                <ul class="list-disc list-inside text-neutral-600 text-sm font-normal">
+                                    <li>Sıfırdan kod projeleri oluşturabilir.</li>
+                                    <li>Mevcut projelerde ajanik kodlama görevleri çözebilir.</li>
+                                    <li>Claude Code, Roo Code, CodeGeex gibi mevcut araç kitleriyle entegrasyon.</li>
+                                    <li>Tam yığın geliştirme (full-stack development) ile web sitesi oluşturma.</li>
+                                </ul>
+                            </div>
+                   </div>
+            </div>
+        </section>
+
+        <!-- SLAYT 12: KULLANIMA BAŞLAMA -->
+        <section class="slide">
+            <div class="container mx-auto px-4 text-center max-w-5xl">
+                <h2 class="text-3xl md:text-5xl font-extrabold mb-12 animated-item">Kullanıma Başlama</h2>
+                <div class="modern-card p-8 animated-item">
+                    <h3 class="font-bold text-2xl mb-4 accent-text">GLM-4.5'e Erişim Yolları</h3>
+                    <ul class="list-disc list-inside text-neutral-700 text-xl font-light text-left mx-auto max-w-lg">
+                        <li><strong>Z.ai platformu:</strong> GLM-4.5 model seçeneğini seçerek sohbet edin.</li>
+                        <li><strong>Z.ai API platformu:</strong> OpenAI uyumlu arayüzlerle erişim sağlayın.</li>
+                        <li><strong>Açık Kaynak:</strong> Model ağırlıkları HuggingFace ve ModelScope üzerinden yerel dağıtım için sunulmaktadır.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLAYT 13: SONUÇ VE TEŞEKKÜRLER -->
+        <section class="slide">
+            <div class="text-center max-w-4xl mx-auto">
+                <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight mb-4 animated-item accent-text">
+                    Teşekkürler!
+                </h1>
+                <p class="text-xl md:text-2xl font-semibold text-neutral-600 animated-item">Sorularınız İçin Buradayız.</p>
+                <p class="text-lg text-neutral-600 mt-8 font-normal animated-item">GLM-4.5: Yapay zeka modellerinin sınırlarını zorlayan ve geleceğin akıllı ajan uygulamaları için sağlam bir temel.</p>
+            </div>
+        </section>
+    </div>
+
+    <!-- HTML5 Audio Elementi -->
+    <audio id="presentation-audio" src="./sunummvp.mp3"></audio> <!-- SES DOSYANIZIN ADININ 'sunummvp.mp3' OLDUĞUNDAN EMİN OLUN -->
+
+    <!-- Navigasyon Okları -->
+    <div id="prev-slide" class="nav-arrow" aria-label="Önceki slayt">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+    </div>
+    <div id="next-slide" class="nav-arrow" aria-label="Sonraki slayt">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+    </div>
+    <!-- İlerleme Çubuğu -->
+    <div id="progress-bar-container">
+        <span id="current-slide-indicator" class="font-mono text-sm">1</span>
+        <div id="progress-bar"><div id="progress-bar-fill"></div></div>
+        <span id="total-slides-indicator" class="font-mono text-sm"></span>
+    </div>
+
+    <script>
+        // Sunum Mantığı Kodu
+        const presentationContainer = document.getElementById('presentation-container');
+        const slides = document.querySelectorAll('.slide');
+        const prevButton = document.getElementById('prev-slide');
+        const nextButton = document.getElementById('next-slide');
+        const currentSlideIndicator = document.getElementById('current-slide-indicator');
+        const totalSlidesIndicator = document.getElementById('total-slides-indicator');
+        const progressBarFill = document.getElementById('progress-bar-fill');
+        
+        let currentSlide = 0;
+        const totalSlides = slides.length;
+        totalSlidesIndicator.textContent = totalSlides; // Toplam slayt sayısını göster
+
+        // Slayt içeriği animasyonu
+        function animateSlideIn(slide) {
+            const items = slide.querySelectorAll('.animated-item');
+            const tl = gsap.timeline();
+            tl.fromTo(items, 
+                { y: 20, opacity: 0 }, /* Başlangıç durumu: 20px aşağıda ve şeffaf */
+                { y: 0, opacity: 1, duration: 0.3, stagger: 0.05, ease: "power3.out" } /* Bitiş durumu: yukarı kayarak ve görünür hale gelerek (daha hızlı) */
+            );
+            // Yol haritası slaytı için özel animasyon (eğer varsa)
+            if (slide.contains(document.querySelector('.roadmap-container'))) {
+                const connectors = slide.querySelectorAll('.roadmap-connector');
+                tl.fromTo(connectors, 
+                    { width: 0 }, /* Başlangıç: genişlik 0 */
+                    { width: '4rem', duration: 0.3, stagger: 0.1, ease: "power4.out" }, /* Bitiş: genişlik 4rem (daha hızlı) */
+                    "-=0.3" /* Önceki animasyonla çakışmasını sağlar */
+                );
+            }
+        }
+
+        // Slaytı göster fonksiyonu
+        function showSlide(index) {
+            const oldSlide = document.querySelector('.slide.active');
+            if(oldSlide) {
+                // Önceki slaytın animasyon özelliklerini temizle
+                gsap.set(oldSlide.querySelectorAll('.animated-item'), { clearProps: "all" });
+            }
+            // Slayt kapsayıcısını hafif bir ölçek efektiyle kaydır
+            gsap.to(presentationContainer, {
+                x: `-${index * 100}vw`,
+                scale: 1, // Ölçeğin 1 olduğundan emin ol
+                duration: 0.4, // Daha hızlı slayt geçişi
+                ease: "power3.out"
+            });
+            // Aktif slayt sınıfını ayarla
+            slides.forEach((slide, i) => {
+                slide.classList.toggle('active', i === index);
+            });
+            // İlerleme çubuğunu ve slayt göstergesini güncelle
+            currentSlideIndicator.textContent = index + 1;
+            progressBarFill.style.width = `${((index + 1) / totalSlides) * 100}%`;
+            // Navigasyon oklarını göster/gizle
+            prevButton.style.display = index === 0 ? 'none' : 'flex';
+            nextButton.style.display = index === totalSlides - 1 ? 'none' : 'flex';
+            // Yeni slaytın animasyonunu başlat
+            animateSlideIn(slides[index]);
+        }
+
+        // Sonraki slayt butonu tıklama olayı
+        nextButton.addEventListener('click', () => {
+            if (currentSlide < totalSlides - 1) {
+                currentSlide++;
+                showSlide(currentSlide);
+            }
+        });
+
+        // Önceki slayt butonu tıklama olayı
+        prevButton.addEventListener('click', () => {
+            if (currentSlide > 0) {
+                currentSlide--;
+                showSlide(currentSlide);
+            }
+        });
+        
+        // Klavye ok tuşları ile slayt geçişi
+        window.addEventListener('keydown', (e) => {
+            // Eğer odak bir textarea üzerinde değilse
+            if (e.key === 'ArrowRight' && !e.target.matches('textarea')) nextButton.click();
+            if (e.key === 'ArrowLeft' && !e.target.matches('textarea')) prevButton.click();
+        });
+
+        // --- BAŞLANGIÇ ---
+        // İlk slaytı göster
+        showSlide(0);
+    </script>
+</body>
+</html>
